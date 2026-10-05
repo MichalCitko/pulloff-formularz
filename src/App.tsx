@@ -288,7 +288,7 @@ function App() {
     }
   }
 
-  const generateWordReport = async (shareWordFile = false) => {
+  const generateWordReport = async () => {
     setIsGeneratingWord(true)
     setWordStatus('Tworzenie dokumentu Word...')
 
@@ -449,41 +449,16 @@ function App() {
 
     const blob = await Packer.toBlob(doc)
       const fileName = `${(form.objectName || 'protokol-pulloff').replace(/\s+/g, '-').toLowerCase()}.docx`
-      const file = new File([blob], fileName, {
-        type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-      })
-      const downloadFile = () => {
-        const url = URL.createObjectURL(blob)
-        const link = document.createElement('a')
-        link.href = url
-        link.download = fileName
-        link.style.display = 'none'
-        document.body.appendChild(link)
-        link.click()
-        link.remove()
-        window.setTimeout(() => URL.revokeObjectURL(url), 60_000)
-      }
-
-      if (shareWordFile && navigator.share && navigator.canShare?.({ files: [file] })) {
-        try {
-          await navigator.share({ files: [file], title: 'Protokół badania pull-off' })
-          setWordStatus('Wybierz Outlook w menu udostępniania, wpisz adres i wyślij dokument.')
-        } catch (error) {
-          if (error instanceof Error && error.name === 'AbortError') {
-            setWordStatus('Udostępnianie dokumentu anulowano.')
-          } else {
-            downloadFile()
-            setWordStatus('Rozpoczęto pobieranie dokumentu Word.')
-          }
-        }
-      } else {
-        downloadFile()
-        setWordStatus(
-          shareWordFile
-            ? 'Udostępnianie plików jest niedostępne. Dokument Word został pobrany.'
-            : 'Rozpoczęto pobieranie dokumentu Word.',
-        )
-      }
+      const url = URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = fileName
+      link.style.display = 'none'
+      document.body.appendChild(link)
+      link.click()
+      link.remove()
+      window.setTimeout(() => URL.revokeObjectURL(url), 60_000)
+      setWordStatus('Rozpoczęto pobieranie dokumentu Word.')
     } catch (error) {
       console.error('Nie udało się wygenerować dokumentu Word:', error)
       setWordStatus('Nie udało się wygenerować dokumentu Word.')
@@ -771,24 +746,14 @@ function App() {
           </button>
         </div>
         <div className="form-actions word-export">
-          <div className="word-export-actions">
-            <button
-              type="button"
-              className="secondary-button"
-              onClick={() => generateWordReport(true)}
-              disabled={isGeneratingWord}
-            >
-              Udostępnij Word
-            </button>
-            <button
-              type="button"
-              className="primary-button"
-              onClick={() => generateWordReport()}
-              disabled={isGeneratingWord}
-            >
-              {isGeneratingWord ? 'Tworzenie dokumentu...' : 'Generuj Word'}
-            </button>
-          </div>
+          <button
+            type="button"
+            className="primary-button"
+            onClick={generateWordReport}
+            disabled={isGeneratingWord}
+          >
+            {isGeneratingWord ? 'Tworzenie dokumentu...' : 'Generuj Word'}
+          </button>
           {wordStatus && <p className="export-status" role="status">{wordStatus}</p>}
         </div>
       </section>
