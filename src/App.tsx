@@ -270,7 +270,10 @@ function App() {
   ) => {
     const input = event.currentTarget
     const file = input.files?.[0]
-    if (!file) return
+    if (!file) {
+      setStatus('Telefon nie przekazał zdjęcia. Spróbuj ponownie lub wybierz zdjęcie z galerii.')
+      return
+    }
     input.value = ''
 
     setStatus('Zmniejszanie zdjęcia...')
@@ -729,7 +732,6 @@ function App() {
                         <input
                           type="file"
                           accept="image/*"
-                          capture="environment"
                           onChange={(event) =>
                             handlePhotoUpload(
                               measurement.id,
