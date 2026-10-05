@@ -1,4 +1,4 @@
-const cacheName = 'pulloff-shell-v1'
+const cacheName = 'pulloff-shell-v2'
 const appBase = self.registration.scope
 const appShell = [
   appBase,
