@@ -81,6 +81,12 @@ label {
   min-width: 220px;
 }
 
+.word-export-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
 .word-export .primary-button:disabled {
   cursor: wait;
   opacity: 0.7;
@@ -261,6 +267,15 @@ textarea {
   }
 
   .measurement-list-actions .secondary-button {
+    width: 100%;
+  }
+
+  .word-export-actions {
+    width: 100%;
+    flex-direction: column-reverse;
+  }
+
+  .word-export-actions button {
     width: 100%;
   }
 

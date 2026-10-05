@@ -288,7 +288,7 @@ function App() {
     }
   }
 
-  const generateWordReport = async () => {
+  const generateWordReport = async (shareWordFile = false) => {
     setIsGeneratingWord(true)
     setWordStatus('Tworzenie dokumentu Word...')
 
@@ -464,10 +464,10 @@ function App() {
         window.setTimeout(() => URL.revokeObjectURL(url), 60_000)
       }
 
-      if (navigator.share && navigator.canShare?.({ files: [file] })) {
+      if (shareWordFile && navigator.share && navigator.canShare?.({ files: [file] })) {
         try {
           await navigator.share({ files: [file], title: 'Protokół badania pull-off' })
-          setWordStatus('Dokument Word został udostępniony.')
+          setWordStatus('Wybierz Outlook w menu udostępniania, wpisz adres i wyślij dokument.')
         } catch (error) {
           if (error instanceof Error && error.name === 'AbortError') {
             setWordStatus('Udostępnianie dokumentu anulowano.')
@@ -478,7 +478,11 @@ function App() {
         }
       } else {
         downloadFile()
-        setWordStatus('Rozpoczęto pobieranie dokumentu Word.')
+        setWordStatus(
+          shareWordFile
+            ? 'Udostępnianie plików jest niedostępne. Dokument Word został pobrany.'
+            : 'Rozpoczęto pobieranie dokumentu Word.',
+        )
       }
     } catch (error) {
       console.error('Nie udało się wygenerować dokumentu Word:', error)
@@ -767,14 +771,24 @@ function App() {
           </button>
         </div>
         <div className="form-actions word-export">
-          <button
-            type="button"
-            className="primary-button"
-            onClick={generateWordReport}
-            disabled={isGeneratingWord}
-          >
-            {isGeneratingWord ? 'Tworzenie dokumentu...' : 'Generuj Word'}
-          </button>
+          <div className="word-export-actions">
+            <button
+              type="button"
+              className="secondary-button"
+              onClick={() => generateWordReport(true)}
+              disabled={isGeneratingWord}
+            >
+              Udostępnij Word
+            </button>
+            <button
+              type="button"
+              className="primary-button"
+              onClick={() => generateWordReport()}
+              disabled={isGeneratingWord}
+            >
+              {isGeneratingWord ? 'Tworzenie dokumentu...' : 'Generuj Word'}
+            </button>
+          </div>
           {wordStatus && <p className="export-status" role="status">{wordStatus}</p>}
         </div>
       </section>

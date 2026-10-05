@@ -1,4 +1,4 @@
-const cacheName = 'pulloff-shell-v2'
+const cacheName = 'pulloff-shell-v3'
 const appBase = self.registration.scope
 const appShell = [
   appBase,
@@ -35,18 +35,18 @@ self.addEventListener('fetch', (event) => {
   if (request.method !== 'GET' || requestUrl.origin !== self.location.origin) return
 
   event.respondWith(
-    caches.match(request).then((cachedResponse) => {
-      if (cachedResponse) return cachedResponse
-
-      return fetch(request)
-        .then(async (response) => {
-          if (response.ok) {
-            const cache = await caches.open(cacheName)
-            await cache.put(request, response.clone())
-          }
-          return response
-        })
-        .catch(async () => (await caches.match(appBase)) ?? Response.error())
-    }),
+    fetch(request)
+      .then(async (response) => {
+        if (response.ok) {
+          const cache = await caches.open(cacheName)
+          await cache.put(request, response.clone())
+        }
+        return response
+      })
+      .catch(async () =>
+        (await caches.match(request)) ??
+        (request.mode === 'navigate' ? await caches.match(appBase) : null) ??
+        Response.error(),
+      ),
   )
 })
