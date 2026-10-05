@@ -166,6 +166,16 @@ textarea {
   gap: 18px;
 }
 
+.measurement-list-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 18px;
+}
+
+.location-input:focus::placeholder {
+  opacity: 0;
+}
+
 .measurement-card {
   background: #f8fafc;
   border: 1px solid #e2e8f0;
@@ -248,6 +258,10 @@ textarea {
   .form-grid,
   .measurement-grid {
     grid-template-columns: 1fr;
+  }
+
+  .measurement-list-actions .secondary-button {
+    width: 100%;
   }
 
   .card {

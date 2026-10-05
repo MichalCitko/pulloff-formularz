@@ -15,13 +15,16 @@ self.addEventListener('install', (event) => {
 
 self.addEventListener('activate', (event) => {
   event.waitUntil(
-    caches.keys().then((cacheNames) =>
-      Promise.all(
-        cacheNames
+    caches
+      .keys()
+      .then((cacheNames) =>
+        Promise.all(
+          cacheNames
             .filter((name) => name.startsWith('pulloff-') && name !== cacheName)
-          .map((name) => caches.delete(name)),
-      ),
-      ).then(() => self.clients.claim()),
+            .map((name) => caches.delete(name)),
+        ),
+      )
+      .then(() => self.clients.claim()),
   )
 })
 
@@ -43,7 +46,7 @@ self.addEventListener('fetch', (event) => {
           }
           return response
         })
-        .catch(async () => (await caches.match(appBase)) ?? Response.error()),
+        .catch(async () => (await caches.match(appBase)) ?? Response.error())
     }),
   )
 })

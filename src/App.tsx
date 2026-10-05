@@ -91,28 +91,58 @@ const concreteConditionOptions = [
 
 const storageKey = 'pulloff-report-v1'
 const maxMeasurementCount = 15
-const maxPhotoDimension = 800
+const maxPhotoDimension = 640
 
 const toBase64 = (dataUrl: string) => dataUrl.split(',')[1] ?? ''
 
+const decodePhoto = async (file: File) => {
+  if (typeof createImageBitmap === 'function') {
+    try {
+      return await createImageBitmap(file)
+    } catch {
+    }
+  }
+
+  const imageUrl = URL.createObjectURL(file)
+
+  return new Promise<HTMLImageElement>((resolve, reject) => {
+    const image = new Image()
+    image.onload = () => {
+      URL.revokeObjectURL(imageUrl)
+      resolve(image)
+    }
+    image.onerror = () => {
+      URL.revokeObjectURL(imageUrl)
+      reject(
+        new Error(
+          'Nie można odczytać zdjęcia. W ustawieniach aparatu wybierz format JPEG zamiast HEIF/HEIC.',
+        ),
+      )
+    }
+    image.src = imageUrl
+  })
+}
+
 const compressPhoto = async (file: File) => {
-  const bitmap = await createImageBitmap(file)
-  const scale = Math.min(1, maxPhotoDimension / Math.max(bitmap.width, bitmap.height))
+  const image = await decodePhoto(file)
+  const width = 'naturalWidth' in image ? image.naturalWidth : image.width
+  const height = 'naturalHeight' in image ? image.naturalHeight : image.height
+  const scale = Math.min(1, maxPhotoDimension / Math.max(width, height))
   const canvas = document.createElement('canvas')
-  canvas.width = Math.max(1, Math.round(bitmap.width * scale))
-  canvas.height = Math.max(1, Math.round(bitmap.height * scale))
+  canvas.width = Math.max(1, Math.round(width * scale))
+  canvas.height = Math.max(1, Math.round(height * scale))
   const context = canvas.getContext('2d')
 
   if (!context) {
-    bitmap.close()
+    if ('close' in image) image.close()
     throw new Error('Nie można przetworzyć zdjęcia.')
   }
 
-  context.drawImage(bitmap, 0, 0, canvas.width, canvas.height)
-  bitmap.close()
+  context.drawImage(image, 0, 0, canvas.width, canvas.height)
+  if ('close' in image) image.close()
 
   const blob = await new Promise<Blob | null>((resolve) => {
-    canvas.toBlob(resolve, 'image/jpeg', 0.55)
+    canvas.toBlob(resolve, 'image/jpeg', 0.45)
   })
 
   if (!blob) throw new Error('Nie można skompresować zdjęcia.')
@@ -177,7 +207,11 @@ function App() {
   const [isGeneratingWord, setIsGeneratingWord] = useState(false)
 
   useEffect(() => {
-    localStorage.setItem(storageKey, JSON.stringify({ form, measurements }))
+    try {
+      localStorage.setItem(storageKey, JSON.stringify({ form, measurements }))
+    } catch {
+      setStatus('Brak miejsca w pamięci przeglądarki. Usuń stare dane strony lub dodaj mniej zdjęć.')
+    }
   }, [form, measurements])
 
   const updateField = (field: keyof FormState, value: string) => {
@@ -234,8 +268,10 @@ function App() {
     photoField: 'photo' | 'resultPhoto' | 'additionalPhoto',
     photoNameField: 'photoName' | 'resultPhotoName' | 'additionalPhotoName',
   ) => {
-    const file = event.target.files?.[0]
+    const input = event.currentTarget
+    const file = input.files?.[0]
     if (!file) return
+    input.value = ''
 
     setStatus('Zmniejszanie zdjęcia...')
 
@@ -244,8 +280,8 @@ function App() {
       updateMeasurement(id, photoField, result)
       updateMeasurement(id, photoNameField, file.name)
       setStatus('Zdjęcie zostało zmniejszone i zapisane.')
-    } catch {
-      setStatus('Nie udało się przetworzyć zdjęcia. Spróbuj wybrać inny plik.')
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : 'Nie udało się przetworzyć zdjęcia.')
     }
   }
 
@@ -573,14 +609,6 @@ function App() {
       <section className="card">
         <div className="section-header">
           <h2>Punkty pomiarowe</h2>
-          <button
-            type="button"
-            className="secondary-button"
-            onClick={addMeasurement}
-            disabled={measurements.length >= maxMeasurementCount}
-          >
-            + Dodaj punkt ({measurements.length}/{maxMeasurementCount})
-          </button>
         </div>
 
         <div className="measurement-list">
@@ -627,6 +655,7 @@ function App() {
                 <label className="full-width">
                   <span>Miejsce pomiaru</span>
                   <input
+                    className="location-input"
                     value={measurement.location}
                     onChange={(event) => updateMeasurement(measurement.id, 'location', event.target.value)}
                     placeholder="np. Ściana elewacyjna, lewa strona, 2. kondygnacja"
@@ -724,6 +753,16 @@ function App() {
               </div>
             </article>
           ))}
+        </div>
+        <div className="measurement-list-actions">
+          <button
+            type="button"
+            className="secondary-button"
+            onClick={addMeasurement}
+            disabled={measurements.length >= maxMeasurementCount}
+          >
+            + Dodaj punkt ({measurements.length}/{maxMeasurementCount})
+          </button>
         </div>
         <div className="form-actions word-export">
           <button
