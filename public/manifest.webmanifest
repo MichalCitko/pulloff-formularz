@@ -8,8 +8,8 @@
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#f4f5f2",
-  "theme_color": "#174a43",
+  "background_color": "#f7f6fa",
+  "theme_color": "#4100c8",
   "icons": [
     {
       "src": "./pulloff-192.png",

@@ -39,7 +39,7 @@ type FormState = {
   participants: string
   structureType: string
   structureCondition: string
-  floorsCount: string
+  coatingCompatibility: string
   protectionDescription: string
 }
 
@@ -49,7 +49,7 @@ const initialForm: FormState = {
   participants: '',
   structureType: '',
   structureCondition: '',
-  floorsCount: '',
+  coatingCompatibility: '',
   protectionDescription: '',
 }
 
@@ -183,8 +183,11 @@ function App() {
     if (!stored) return initialForm
 
     try {
-      const parsed = JSON.parse(stored) as { form?: FormState; measurements?: Measurement[] }
-      return parsed.form ?? initialForm
+      const parsed = JSON.parse(stored) as {
+        form?: Partial<FormState>
+        measurements?: Measurement[]
+      }
+      return { ...initialForm, ...parsed.form }
     } catch {
       return initialForm
     }
@@ -313,7 +316,13 @@ function App() {
             new Paragraph({ text: `Uczestnicy: ${form.participants || '-'}` }),
             new Paragraph({ text: `Konstrukcja: ${form.structureType || '-'}` }),
             new Paragraph({ text: `Stan konstrukcji: ${form.structureCondition || '-'}` }),
-            new Paragraph({ text: `Liczba kondygnacji: ${form.floorsCount || '-'}` }),
+            new Paragraph({
+              text: `Sprawdzenie kompatybilności powłoki: ${
+                form.structureType === 'Konstrukcja stalowa'
+                  ? form.coatingCompatibility || '-'
+                  : '-'
+              }`,
+            }),
             new Paragraph({ text: `Opis zabezpieczenia: ${form.protectionDescription || '-'}` }),
             new Paragraph({
               text: 'Punkty pomiarowe',
@@ -524,10 +533,13 @@ function App() {
                   ...current,
                   structureType,
                   structureCondition:
-                    conditionOptions.length > 0 &&
-                    !conditionOptions.includes(current.structureCondition)
-                      ? ''
-                      : current.structureCondition,
+                    conditionOptions.includes(current.structureCondition)
+                      ? current.structureCondition
+                      : '',
+                  coatingCompatibility:
+                    structureType === 'Konstrukcja stalowa'
+                      ? current.coatingCompatibility
+                      : '',
                 }))
               }}
             >
@@ -540,41 +552,48 @@ function App() {
             </select>
           </label>
 
-          <label>
-            <span>Stan konstrukcji</span>
-            {form.structureType === 'Konstrukcja stalowa' ||
-            form.structureType === 'Konstrukcja betonowa' ? (
-              <select
-                value={form.structureCondition}
-                onChange={(event) => updateField('structureCondition', event.target.value)}
-              >
-                <option value="">Wybierz stan konstrukcji</option>
-                {(form.structureType === 'Konstrukcja stalowa'
-                  ? steelConditionOptions
-                  : concreteConditionOptions
-                ).map((option) => (
-                  <option key={option} value={option}>
-                    {option}
-                  </option>
-                ))}
-              </select>
-            ) : (
-              <input
-                value={form.structureCondition}
-                onChange={(event) => updateField('structureCondition', event.target.value)}
-                placeholder="np. dobry, wymagający naprawy, wilgotny"
-              />
-            )}
-          </label>
+          {form.structureType && (
+            <label>
+              <span>Stan konstrukcji</span>
+              {form.structureType === 'Konstrukcja stalowa' ||
+              form.structureType === 'Konstrukcja betonowa' ? (
+                <select
+                  value={form.structureCondition}
+                  onChange={(event) => updateField('structureCondition', event.target.value)}
+                >
+                  <option value="">Wybierz stan konstrukcji</option>
+                  {(form.structureType === 'Konstrukcja stalowa'
+                    ? steelConditionOptions
+                    : concreteConditionOptions
+                  ).map((option) => (
+                    <option key={option} value={option}>
+                      {option}
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <input
+                  value={form.structureCondition}
+                  onChange={(event) => updateField('structureCondition', event.target.value)}
+                  placeholder="np. dobry, wymagający naprawy, wilgotny"
+                />
+              )}
+            </label>
+          )}
 
-          <label>
-            <span>Liczba kondygnacji</span>
-            <input
-              value={form.floorsCount}
-              onChange={(event) => updateField('floorsCount', event.target.value)}
-              placeholder="np. 5"
-            />
-          </label>
+          {form.structureType === 'Konstrukcja stalowa' && (
+            <label>
+              <span>Sprawdzenie kompatybilności powłoki</span>
+              <select
+                value={form.coatingCompatibility}
+                onChange={(event) => updateField('coatingCompatibility', event.target.value)}
+              >
+                <option value="">Wybierz</option>
+                <option value="SPRAWDZONO">SPRAWDZONO</option>
+                <option value="NIESPRAWDZONO">NIESPRAWDZONO</option>
+              </select>
+            </label>
+          )}
 
           <label className="full-width">
             <span>Opis zabezpieczenia / warstwa</span>
