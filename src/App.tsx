@@ -58,7 +58,7 @@ const initialMeasurements: Measurement[] = [
     id: 1,
     point: '1',
     diameter: '50',
-    location: 'Ściana elewacyjna, strefa południowa, 1. kondygnacja',
+    location: '',
     photo: '',
     photoName: '',
     resultPhoto: '',
@@ -178,44 +178,22 @@ const createCell = (text: string, isHeader = false) =>
   })
 
 function App() {
-  const [form, setForm] = useState<FormState>(() => {
-    const stored = localStorage.getItem(storageKey)
-    if (!stored) return initialForm
+  const [form, setForm] = useState<FormState>(initialForm)
+  const [measurements, setMeasurements] = useState<Measurement[]>(initialMeasurements)
 
-    try {
-      const parsed = JSON.parse(stored) as {
-        form?: Partial<FormState>
-        measurements?: Measurement[]
-      }
-      return { ...initialForm, ...parsed.form }
-    } catch {
-      return initialForm
-    }
-  })
-
-  const [measurements, setMeasurements] = useState<Measurement[]>(() => {
-    const stored = localStorage.getItem(storageKey)
-    if (!stored) return initialMeasurements
-
-    try {
-      const parsed = JSON.parse(stored) as { form?: FormState; measurements?: Measurement[] }
-      return parsed.measurements?.length ? parsed.measurements : initialMeasurements
-    } catch {
-      return initialMeasurements
-    }
-  })
-
-  const [status, setStatus] = useState('Dane zapisują się lokalnie na urządzeniu.')
+  const [status, setStatus] = useState(
+    'Dane nie są zapisywane po zamknięciu ani odświeżeniu aplikacji.',
+  )
   const [wordStatus, setWordStatus] = useState('')
   const [isGeneratingWord, setIsGeneratingWord] = useState(false)
 
   useEffect(() => {
     try {
-      localStorage.setItem(storageKey, JSON.stringify({ form, measurements }))
-    } catch {
-      setStatus('Brak miejsca w pamięci przeglądarki. Usuń stare dane strony lub dodaj mniej zdjęć.')
+      localStorage.removeItem(storageKey)
+    } catch (error) {
+      console.error('Nie udało się usunąć poprzedniego zapisu formularza:', error)
     }
-  }, [form, measurements])
+  }, [])
 
   const updateField = (field: keyof FormState, value: string) => {
     setForm((current) => ({ ...current, [field]: value }))
